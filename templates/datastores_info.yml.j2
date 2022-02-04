@@ -1,0 +1,25 @@
+{% set ns = namespace(found=false) %}
+{% for r in vmware_provisioner_datastores_result.results %}
+{% set hostname = r.vmware_provisioner_cluster.hostname %}
+{% set datacenter = r.vmware_provisioner_cluster.datacenter %}
+{% set cluster = r.vmware_provisioner_cluster.name %}
+
+{% for d in r.datastores  %}
+- name: {{ d.name | to_json }}
+  hostname: "{{ hostname }}"
+  datacenter: {{ datacenter }}
+  cluster: {{ cluster }}
+  accessible: {{ d.accessible | to_json }}
+  free: {{ d.free | to_json }}
+  maintenanceMode: {{ d.maintenanceMode | to_json }}
+  multipleHostAccess: {{ d.multipleHostAccess | to_json }}
+  total: {{ d.total | to_json }}
+  type: {{ d.type | to_json }}
+  uncommitted: {{ d.uncommitted | to_json }}
+{% set ns.found = true %}
+{% endfor %}
+{% endfor %}
+
+{% if not ns.found %}
+[]
+{% endif %}

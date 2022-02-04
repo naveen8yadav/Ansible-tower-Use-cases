@@ -1,0 +1,190 @@
+---
+# Setup vmware vms sequentiallly
+
+- block:
+    - name: Sequential vmware virtual machines deploy
+      vmware_guest:
+        annotation: >-
+          {{ vm.annotation
+             | default(vmware_provisioner_vm_annotation)
+             | default(omit, boolean=true) }}
+        cdrom: >-
+          {{ vm.cdrom
+             | default(vmware_provisioner_vm_cdrom)
+             | default(omit)
+             | default(omit, boolean=true) }}
+        cluster: >-
+          {{ vm.cluster
+             | default(vmware_provisioner_vm_cluster)
+             | default(omit, boolean=true) }}
+        customization: >-
+           {{ vm.customization
+              | default(vmware_provisioner_vm_customization)
+              | default(omit, boolean=true) }}
+        customization_spec: >-
+          {{ vm.customization_spec
+             | default(vmware_provisioner_vm_customization_spec)
+             | default(omit, boolean=true) }}
+        customvalues: >-
+          {{ vm.customvalues
+             | default(vmware_provisioner_vm_customvalues)
+             | default(omit, boolean=true) }}
+        datacenter: >-
+          {{ vm.datacenter
+             | default(vmware_provisioner_vm_datacenter)
+             | default(omit, boolean=true) }}
+        datastore: >-
+          {{ vm.datastore
+             | default(vmware_provisioner_vm_datastore)
+             | default(omit, boolean=true) }}
+        disk: "{{ vmware_provisioner_vm_disk_to_manage }}"
+        esxi_hostname: >-
+          {{ vm.esxi_hostname
+             | default(vmware_provisioner_vm_esxi_hostname)
+             | default(omit, boolean=true) }}
+        folder: >-
+          {{ vm.folder
+             | default(vmware_provisioner_vm_folder)
+             | default(omit, boolean=true)  }}
+        force: >-
+          {{ vm.force
+             | default(vmware_provisioner_vm_force) }}
+        guest_id: >-
+          {{ vm.guest_id
+             | default(vmware_provisioner_vm_guest_id)
+             | default(omit, boolean=true) }}
+        hardware: >-
+          {{ vm.hardware
+             | default(vmware_provisioner_vm_hardware)
+             | default(omit, boolean=true) }}
+        hostname: >-
+          {{ vm.vcenter
+             | default(vmware_provisioner_hostname_default) }}
+        is_template: >-
+          {{ vm.is_template
+             | default(vmware_provisioner_vm_is_template) }}
+        linked_clone: >-
+          {{ vm.linked_clone
+             | default(vmware_provisioner_vm_linked_clone) }}
+        name: >-
+          {{ vm.name
+             | default(vmware_provisioner_vm_name)
+             | default(omit, boolean=true) }}
+        name_match: >-
+          {{ vm.name_match
+             | default(vmware_provisioner_vm_name_match)
+             | default(omit, boolean=true) }}
+        networks: >-
+          {{ vm.networks
+             | default(vmware_provisioner_vm_networks)
+             | default(omit, boolean=true) }}
+        password: >-
+          {{ vmware_provisioner_auth_item.password
+             | default(vmware_provisioner_password) }}
+        port: >-
+          {{ vmware_provisioner_port | default(omit) }}
+        resource_pool: >-
+          {{ vm.resource_pool
+             | default(vmware_provisioner_vm_resource_pool)
+             | default(omit, boolean=true) }}
+        snapshot_src: >-
+          {{ vm.snapshot_src
+             | default(vmware_provisioner_vm_snapshot_src)
+             | default(omit, boolean=true) }}
+        state: >-
+          {{ vm.state
+             | default(vmware_provisioner_vm_state)
+             | default(omit, boolean=true) }}
+        state_change_timeout: >-
+          {{ vm.state_change_timeout
+             | default(vmware_provisioner_vm_state_change_timeout)
+             | default(omit, boolean=true) }}
+        template: >-
+          {{ vm.template
+             | default(vmware_provisioner_vm_template)
+             | default(omit, boolean=true) }}
+        username: >-
+          {{ vmware_provisioner_auth_item.username
+             | default(vmware_provisioner_username) }}
+        uuid: >-
+          {{ vm.uuid
+             | default(vmware_provisioner_vm_uuid)
+             | default(omit, boolean=true) }}
+        validate_certs: >-
+          {{ vmware_provisioner_validate_certs | default(omit) }}
+        vapp_properties: >-
+          {{ vm.vapp_properties
+             | default(vmware_provisioner_vm_vapp_properties)
+             | default(omit, boolean=true) }}
+        wait_for_ip_address: >-
+          {{ vm.wait_for_ip_address
+             | default(vmware_provisioner_vm_wait_for_ip_address) }}
+      register: vmware_provisioner_vms_setup_result
+      loop: "{{ vmware_provisioner_vms_to_manage }}"
+      loop_control:
+        loop_var: vm
+        label: >-
+          {{ vm.name }}
+          {{ vm.state
+             | default(vmware_provisioner_vm_state)
+             | default(omit, boolean=true) }}
+      ignore_errors: yes
+      vars:
+        vmware_provisioner_auth_item: >-
+          {{ vmware_provisioner_auth
+             [vm.vcenter | default(vmware_provisioner_hostname_default)]
+             | default({}) }}
+
+        vmware_provisioner_vm_name_exists: >-
+          {{ vmware_provisioner_vms_detailed_facts
+             | selectattr("hw_name", "defined")
+             | selectattr("hw_name",
+                          "equalto",
+                          vm.name
+                          | default(vmware_provisioner_vm_name)
+                          | default(""))
+             | list
+             | length > 0 }}
+
+        vmware_provisioner_vm_uuid_exists: >-
+          {{ vmware_provisioner_vms_detailed_facts
+             | selectattr("instance_uuid", "defined")
+             | selectattr("instance_uuid",
+                          "equalto",
+                          vm.uuid
+                          | default(vmware_provisioner_vm_uuid)
+                          | default(""))
+             | list
+             | length > 0 }}
+
+        vmware_provisioner_vm_disk_to_manage: >-
+          {{ (vmware_provisioner_vm_name_exists | bool
+              or vmware_provisioner_vm_uuid_exists | bool)
+             | ternary(omit,
+                       [(vm.disk
+                         | default(vmware_provisioner_vm_disk)).0
+                        | default([])]
+                        | flatten) }}
+      no_log: "{{ vmware_provisioner_no_log | bool }}"
+
+    - name: Check vmware virtual machines deploy
+      assert:
+        that: >-
+            vmware_provisioner_vms_setup_result.results[vm_index] is success
+        quiet: yes
+        fail_msg: >-
+          {{ vmware_provisioner_vms_setup_result.results[vm_index].msg
+             | default("") }}
+        success_msg: Virtual machine deployed successful
+      loop: "{{ vmware_provisioner_vms_to_manage }}"
+      loop_control:
+        loop_var: vm
+        index_var: vm_index
+        label: >-
+          {{ vm.name }}
+          {{ vm.state
+             | default(vmware_provisioner_vm_state)
+             | default(omit, boolean=true) }}
+  tags:
+    - role::vmware_provisioner
+    - role::vmware_provisioner::vms

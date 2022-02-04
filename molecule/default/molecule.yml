@@ -1,0 +1,51 @@
+---
+
+dependency:
+  name: galaxy
+  enabled: yes
+  options:
+    ignore-certs: yes
+    ignore-errors: yes
+    role-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
+    requirements-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
+lint: "${MOLECULE_SCENARIO_DIRECTORY}/linters.sh"
+platforms:
+  - name: dummy
+provisioner:
+  name: ansible
+  ansible_args:
+    - --inventory=${ANSIBLE_INVENTORY}
+    - --vault-password-file=${ANSIBLE_VAULT_PASSWORD_FILE:-/etc/hostname}
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks
+      action_plugins: $PWD/action_plugins
+  inventory:
+    hosts:
+      molecule_hosts:
+        hosts:
+          "${VMWARE_PROVISIONER_TEST_HOST}":
+            vmware_provisioner_vms:
+              - name: "vmware_provisioner_testing_vm1"
+                annotation: Ansible role vmware_provisioner unit test vm 1
+                folder: /
+                guest_id: centos7_64Guest
+                hardware:
+                  memory_mb: 512
+                  num_cpus: 1
+                  num_cpu_cores_per_socket: 1
+                wait_for_ip_address: no
+                force: yes
+
+              - name: "vmware_provisioner_testing_vm2"
+                annotation: Ansible role vmware_provisioner unit test vm 1
+                folder: /
+                guest_id: centos7_64Guest
+                hardware:
+                  memory_mb: 512
+                  num_cpus: 1
+                  num_cpu_cores_per_socket: 1
+                wait_for_ip_address: no
+                force: yes
+verifier:
+  name: ansible

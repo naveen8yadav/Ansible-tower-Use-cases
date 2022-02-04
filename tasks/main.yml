@@ -1,0 +1,70 @@
+---
+# Role tasks
+
+- name: Setup fact to optimize further runs
+  set_fact:
+    vmware_provisioner_deps_resolved: yes
+  tags:
+    - role::vmware_provisioner
+
+- include_tasks: session.yml
+  tags:
+    - role::vmware_provisioner
+
+- include_tasks: datacenters_info.yml
+  when:
+    - >-
+      vmware_provisioner_gather_datacenters_info | bool
+      or vmware_provisioner_gather_clusters_info | bool
+      or vmware_provisioner_gather_datastores_info | bool
+    - >-
+      vmware_provisioner_datacenters_info is not defined
+      or vmware_provisioner_gather_datacenters_info_force | bool
+
+  tags:
+    - role::vmware_provisioner
+    - role::vmware_provisioner::datacenters
+
+- include_tasks: clusters_info.yml
+  when:
+    - >-
+      vmware_provisioner_gather_clusters_info | bool
+      or vmware_provisioner_gather_datastores_info | bool
+    - >-
+      vmware_provisioner_clusters_info is not defined
+      or vmware_provisioner_gather_clusters_info_force | bool
+  tags:
+    - role::vmware_provisioner
+    - role::vmware_provisioner::clusters
+
+- include_tasks: datastores_info.yml
+  when:
+    - vmware_provisioner_gather_datastores_info | bool
+    - >-
+      vmware_provisioner_datastores_info is not defined
+      or vmware_provisioner_gather_datastores_info_force | bool
+  tags:
+    - role::vmware_provisioner
+    - role::vmware_provisioner::datastores
+
+- include_tasks: folders_info.yml
+  when:
+    - vmware_provisioner_gather_datacenters_info | bool
+    - vmware_provisioner_gather_folders_info | bool
+    - >-
+      vmware_provisioner_folders_info is not defined
+      or vmware_provisioner_gather_folders_info_force | bool
+  tags:
+    - role::vmware_provisioner
+    - role::vmware_provisioner::foders
+
+- include_tasks: vms.yml
+  tags:
+    - role::vmware_provisioner
+    - role::vmware_provisioner::vms
+
+- include_tasks: vms_attrs.yml
+  tags:
+    - role::vmware_provisioner
+    - role::vmware_provisioner::vms
+    - role::vmware_provisioner::vms::attributes
